@@ -1,0 +1,26 @@
+credentials:
+  emails:
+    nischaybk@theboringpeople.in:
+      name: Nischay BK
+      password: Nbkmdy@31
+      role: admin
+    subhapattnaik@theboringpeople.in:
+      name: Admin User
+      password: acolyte2024
+      role: admin
+    ayesha@theboringpeople.in:
+      name: Admin User
+      password: acolyte2024
+      role: admin
+    varun@theboringpeople.in:
+      name: Admin User
+      password: acolyte2024
+      role: admin
+    admin@myacolyte.in:
+      name: Admin User
+      password: acolyte2024
+      role: admin      
+settings:
+  allowed_domains:
+    - theboringpeople.in
+    - myacolyte.in
