@@ -1238,46 +1238,123 @@ else:
         }
         
         # Base Revenue Data
-        base_revenue = {
+        lt_base_revenue= {
             'Q2': 1822000,
             'Q3': 4515000,
             'Q4': 7468000
         }
-        
+        lt_market_data = pd.DataFrame({
+            'Year': ['2025', '2026', '2027'],
+            'Total_Market': [870000, 1000500, 1150575],
+            'Our_Users': [5000, 25000, 100000],
+            'Market_Share': [0.6, 2.9, 11.5]
+        })
+
+        lt_revenue_mix = pd.DataFrame({
+            'Year': ['2025', '2026', '2027'],
+            'Student_Plans': [26, 35, 45],
+            'Institutional': [74, 65, 55]
+        })
+
+        lt_cost_structure = pd.DataFrame({
+            'Year': ['2025', '2026', '2027'],
+            'Development': [40, 35, 30],
+            'Marketing': [25, 20, 15],
+            'Infrastructure': [15, 25, 35],
+            'Admin_Support': [20, 20, 20]
+        })
+
+        lt_team_growth = pd.DataFrame({
+            'Year': ['2025', '2026', '2027'],
+            'Development': [8, 20, 40],
+            'Sales': [5, 15, 25],
+            'Support': [4, 10, 20],
+            'Admin': [3, 5, 15]
+        })
+
+        lt_profitability_metrics = pd.DataFrame({
+            'Year': ['2025', '2026', '2027'],
+            'Gross_Margin': [31.4, 44.6, 66.5],
+            'Operating_Margin': [15.2, 25.8, 35.6],
+            'EBITDA_Margin': [10.5, 20.4, 30.2]
+        })
+
+        lt_benchmark_data = pd.DataFrame({
+            'Metric': ['CAC', 'LTV', 'Gross Margin', 'Growth Rate'],
+            'Acolyte': [1200, 9984, 55, 147.8],
+            'Competitor A': [2500, 12000, 45, 100],
+            'Competitor B': [1800, 8000, 50, 120],
+            'Industry Avg': [2000, 10000, 48, 110]
+        })
+
+        lt_scenario_data = pd.DataFrame({
+            'Metric': ['Revenue 2027', 'Users 2027', 'Market Share 2027', 'Gross Margin 2027'],
+            'Conservative': [70000000, 70000, 8.1, 45],
+            'Base Case': [100000000, 100000, 11.5, 55],
+            'Aggressive': [130000000, 130000, 15.0, 65]
+        })
+
+        # Create quarters for growth metrics
+        quarters = pd.date_range(start='2025-04-01', end='2027-12-31', freq='Q')
+        revenue_growth = [None, 147.8, 65.4, 45.0, 40.0, 35.0, 32.0, 30.0, 28.0, 25.0, 22.0]
+        user_growth = [None, 150.0, 75.0, 50.0, 45.0, 40.0, 35.0, 32.0, 30.0, 28.0, 25.0]
+
+        lt_growth_metrics = pd.DataFrame({
+            'Quarter': quarters,
+            'Revenue_Growth': revenue_growth,
+            'User_Growth': user_growth
+        })
+        quarterly_data = pd.DataFrame({
+                    'Quarter': ['Q2 2025', 'Q3 2025', 'Q4 2025'],
+                    'Revenue': [
+                        lt_base_revenue['Q2'] * multipliers[scenario],
+                        lt_base_revenue['Q3'] * multipliers[scenario],
+                        lt_base_revenue['Q4'] * multipliers[scenario]
+                    ]
+                })
+
+        # Create sensitivity data
+        sensitivity_range = [-20, -10, 0, 10, 20]
+        base_revenue_2027 = 100000000 
+        lt_sensitivity_data = pd.DataFrame({
+            'Change_%': sensitivity_range,
+            'Revenue_Impact': [base_revenue_2027* (1 + x/100) for x in sensitivity_range],
+            'Margin_Impact': [55 + (x/2) for x in sensitivity_range]
+        })
         # Revenue Projections Section
         st.header("Revenue Projections")
         
         # Quarterly Revenue Breakdown
         revenue_tabs = st.tabs(["Quarterly Overview", "Monthly Breakdown", "Revenue Streams"])
-        
+    
         with revenue_tabs[0]:
             col1, col2 = st.columns(2)
             
             with col1:
-                # Quarterly Revenue Chart
-                quarterly_data = pd.DataFrame({
-                    'Quarter': ['Q2 2025', 'Q3 2025', 'Q4 2025'],
-                    'Revenue': [v * multipliers[scenario] for v in base_revenue.values()]
-                })
+                # Create quarterly data correctly
+
                 
                 fig = px.bar(quarterly_data, x='Quarter', y='Revenue',
                             title=f'Quarterly Revenue Projection ({scenario})')
                 fig.update_traces(text=[format_indian_currency(x) for x in quarterly_data['Revenue']],
                                 textposition='auto')
                 fig.update_layout(template="plotly_dark")
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="quarterly_revenue_chart")
             
             with col2:
-                # Key Metrics
-                total_revenue = sum(base_revenue.values()) * multipliers[scenario]
+                total_revenue = (lt_base_revenue['Q2'] + lt_base_revenue['Q3'] + lt_base_revenue['Q4']) * multipliers[scenario]
                 avg_monthly_revenue = total_revenue / 9  # 9 months
                 
                 st.metric("Total Projected Revenue 2025", 
                         format_indian_currency(total_revenue))
                 st.metric("Average Monthly Revenue", 
                         format_indian_currency(avg_monthly_revenue))
-                growth_q2_q3 = ((base_revenue['Q3'] - base_revenue['Q2'])/base_revenue['Q2'] * 100)
-                growth_q3_q4 = ((base_revenue['Q4'] - base_revenue['Q3'])/base_revenue['Q3'] * 100)
+                q2_revenue = 1822000
+                q3_revenue = 4515000
+                q4_revenue = 7468000
+
+                growth_q2_q3 = ((q3_revenue - q2_revenue)/q2_revenue * 100)
+                growth_q3_q4 = ((q4_revenue - q3_revenue)/q3_revenue * 100)
                 st.metric("Q2 to Q3 Growth", f"{growth_q2_q3:.1f}%")
                 st.metric("Q3 to Q4 Growth", f"{growth_q3_q4:.1f}%")
         
@@ -1356,7 +1433,7 @@ else:
             with col1:
                 margin_data = pd.DataFrame({
                     'Quarter': ['Q2 2025', 'Q3 2025', 'Q4 2025'],
-                    'Revenue': [v * multipliers[scenario] for v in base_revenue.values()],
+                    'Revenue': [v * multipliers[scenario] for v in lt_base_revenue.values()],
                     'Costs': [1250000, 2500000, 2500000]
                 })
                 margin_data['Margin'] = (margin_data['Revenue'] - margin_data['Costs']) / margin_data['Revenue'] * 100
@@ -1407,7 +1484,7 @@ else:
         quarters = ['Q2 2025', 'Q3 2025', 'Q4 2025']
         cash_flow_data = pd.DataFrame({
             'Quarter': quarters,
-            'Operating Inflow': [v * multipliers[scenario] for v in base_revenue.values()],
+            'Operating Inflow': [v * multipliers[scenario] for v in lt_base_revenue.values()],
             'Operating Costs': [1250000, 2500000, 2500000],
             'Working Capital': [200000, 400000, 600000]
         })
@@ -1453,43 +1530,115 @@ else:
         with longterm_tabs[0]:
             # Key Assumptions Section
             assumption_tabs = st.tabs(["Market & Growth", "Revenue", "Costs", "Operational"])
+    
+        with assumption_tabs[0]:  # Market & Growth
+            st.markdown("""
+            ### Market & Growth Assumptions
             
-            with assumption_tabs[0]:
-                st.markdown("""
-                ### Market & Growth Assumptions
-                
-                1. Market Size
-                - Current medical/dental students: 8.7L
-                - Annual market growth: 15%
-                - New admissions per year: ~1.2L
-                
-                2. Market Penetration
-                - 2025: 0.6% (5,000 users)
-                - 2026: 2.9% (25,000 users)
-                - 2027: 11.5% (100,000 users)
-                
-                3. Geographic Expansion
-                - 2025: South India focus
-                - 2026: Pan-India expansion
-                - 2027: Tier 2/3 city penetration
-                """)
-                
-                # Market Growth Visualization
-                market_growth = pd.DataFrame({
-                    'Year': ['2025', '2026', '2027'],
-                    'Total_Market': [870000, 1000500, 1150575],
-                    'Our_Users': [5000, 25000, 100000],
-                    'Market_Share': [0.6, 2.9, 11.5]
-                })
-                
-                fig = px.bar(market_growth, x='Year', y=['Total_Market', 'Our_Users'],
-                            title='Market Size vs Our Users',
-                            barmode='overlay')
-                fig.update_layout(template="plotly_dark")
-                st.plotly_chart(fig, use_container_width=True)
+            1. Market Size
+            - Current medical/dental students: 8.7L
+            - Annual market growth: 15%
+            - New admissions per year: ~1.2L
+            
+            2. Market Penetration
+            - 2025: 0.6% (5,000 users)
+            - 2026: 2.9% (25,000 users)
+            - 2027: 11.5% (100,000 users)
+            
+            3. Geographic Expansion
+            - 2025: South India focus
+            - 2026: Pan-India expansion
+            - 2027: Tier 2/3 city penetration
+            """)
+            
+            # Market Growth Visualization
 
-            # [Continue with all the other assumption tabs content...]
+            fig = px.bar(lt_market_data, x='Year', y=['Total_Market', 'Our_Users'],
+                        title='Market Size vs Our Users',
+                        barmode='overlay')
+            fig.update_layout(template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True, key="lt_market_growth_chart")
         
+        with assumption_tabs[1]:  # Revenue
+            st.markdown("""
+            ### Revenue Assumptions
+            
+            1. Subscription Plans
+            - Basic: ₹499/month or ₹4,999/year
+            - Pro: ₹999/month or ₹9,999/year
+            - Premium: ₹1,499/month or ₹14,999/year
+            
+            2. Conversion Rates
+            - Free to Paid: 15% → 20% → 25%
+            - Monthly to Annual: 70% → 75% → 80%
+            - Basic to Pro: 30% → 35% → 40%
+            
+            3. Institutional Pricing
+            - Tier 1: ₹3,500 per student/year
+            - Tier 2: ₹3,000 per student/year
+            - Tier 3: ₹2,500 per student/year
+            """)
+            fig = px.bar(lt_revenue_mix, x='Year', y=['Student_Plans', 'Institutional'],
+                        title='Revenue Mix Evolution (%)',
+                        barmode='stack')
+            fig.update_layout(template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True, key="lt_revenue_mix_chart")
+        
+        with assumption_tabs[2]:  # Costs
+            st.markdown("""
+            ### Cost Assumptions
+            
+            1. Fixed Costs
+            - Development Team: 40% of operating costs
+            - Infrastructure: 15% of operating costs
+            - Admin & Support: 20% of operating costs
+            
+            2. Variable Costs
+            - Customer Acquisition: ₹1,200 per individual user
+            - Institutional Acquisition: ₹80,000 per institution
+            - Server Costs: ₹15 per active user/month
+            
+            3. Marketing Spend
+            - 2025: 25% of revenue
+            - 2026: 20% of revenue
+            - 2027: 15% of revenue
+            """)
+            
+            # Cost Structure Evolution
+            fig = px.area(lt_cost_structure, x='Year', 
+                        y=['Development', 'Marketing', 'Infrastructure', 'Admin_Support'],
+                        title='Cost Structure Evolution (%)')
+            fig.update_layout(template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True, key="lt_cost_structure_chart")
+        
+        with assumption_tabs[3]:  # Operational
+            st.markdown("""
+            ### Operational Assumptions
+            
+            1. Team Size
+            - 2025: 15-20 people
+            - 2026: 40-50 people
+            - 2027: 80-100 people
+            
+            2. Infrastructure Scaling
+            - AWS Reserved Instances
+            - Multi-region deployment
+            - Auto-scaling implementation
+            
+            3. Customer Support
+            - Response Time: < 4 hours
+            - Resolution Time: < 24 hours
+            - Support Staff Ratio: 1:1000 users
+            """)
+            
+            # Team Growth
+            fig = px.bar(lt_team_growth, x='Year',
+                        y=['Development', 'Sales', 'Support', 'Admin'],
+                        title='Team Size Evolution',
+                        barmode='stack')
+            fig.update_layout(template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True, key="lt_team_growth_chart")
+            
         with longterm_tabs[1]:
             st.markdown("""
             ### Revenue Assumptions
@@ -1511,17 +1660,11 @@ else:
             """)
             
             # Revenue Mix Evolution
-            revenue_mix = pd.DataFrame({
-                'Year': ['2025', '2026', '2027'],
-                'Student_Plans': [26, 35, 45],
-                'Institutional': [74, 65, 55]
-            })
-            
-            fig = px.bar(revenue_mix, x='Year', y=['Student_Plans', 'Institutional'],
+            fig = px.bar(lt_revenue_mix, x='Year', y=['Student_Plans', 'Institutional'],
                         title='Revenue Mix Evolution (%)',
                         barmode='stack')
             fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="lt_revenue_mix_chart_1")
         
         with longterm_tabs[2]:
             st.markdown("""
@@ -1544,19 +1687,11 @@ else:
             """)
             
             # Cost Structure Evolution
-            cost_structure = pd.DataFrame({
-                'Year': ['2025', '2026', '2027'],
-                'Development': [40, 35, 30],
-                'Marketing': [25, 20, 15],
-                'Infrastructure': [15, 25, 35],
-                'Admin_Support': [20, 20, 20]
-            })
-            
-            fig = px.area(cost_structure, x='Year', 
+            fig = px.area(lt_cost_structure, x='Year', 
                         y=['Development', 'Marketing', 'Infrastructure', 'Admin_Support'],
                         title='Cost Structure Evolution (%)')
             fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="lt_cost_structure_chart_1")
         
         with longterm_tabs[3]:
             st.markdown("""
@@ -1579,20 +1714,12 @@ else:
             """)
             
             # Team Growth
-            team_growth = pd.DataFrame({
-                'Year': ['2025', '2026', '2027'],
-                'Development': [8, 20, 40],
-                'Sales': [5, 15, 25],
-                'Support': [4, 10, 20],
-                'Admin': [3, 5, 15]
-            })
-            
-            fig = px.bar(team_growth, x='Year',
+            fig = px.bar(lt_team_growth, x='Year',
                         y=['Development', 'Sales', 'Support', 'Admin'],
                         title='Team Size Evolution',
                         barmode='stack')
             fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="lt_team_growth_chart_1")
         
         # 2. Scenario Analysis
         st.subheader("Scenario Analysis")
@@ -1609,36 +1736,36 @@ else:
         }
         
         scenario_data = pd.DataFrame({
-            'Metric': ['Revenue 2027', 'Users 2027', 'Market Share 2027', 'Gross Margin 2027'],
-            'Conservative': [70000000, 70000, 8.1, 45],
-            'Base Case': [100000000, 100000, 11.5, 55],
-            'Aggressive': [130000000, 130000, 15.0, 65]
-        })
-        
+        'Metric': ['Revenue 2027', 'Users 2027', 'Market Share 2027', 'Gross Margin 2027'],
+        'Conservative': [70000000, 70000, 8.1, 45],
+        'Base Case': [100000000, 100000, 11.5, 55],
+        'Aggressive': [130000000, 130000, 15.0, 65]
+    }).set_index('Metric')  # Set Metric as index
+    
         col1, col2 = st.columns(2)
         
         with col1:
             # Scenario Comparison
-            fig = px.bar(scenario_data, x='Metric',
+            fig = px.bar(lt_scenario_data, x='Metric',
                         y=[scenario for scenario in scenario_multipliers.keys()],
                         title='Scenario Comparison',
                         barmode='group')
             fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="lt_scenario_comparison_chart")
         
         with col2:
             # Selected Scenario Details
             st.metric("Revenue 2027", 
-                    format_indian_currency(scenario_data[scenarios]['Revenue 2027']))
+                    format_indian_currency(scenario_data.loc['Revenue 2027', scenarios]))
             st.metric("Users 2027", 
-                    f"{scenario_data[scenarios]['Users 2027']:,.0f}")
+                    f"{scenario_data.loc['Users 2027', scenarios]:,.0f}")
             st.metric("Market Share 2027", 
-                    f"{scenario_data[scenarios]['Market Share 2027']}%")
+                    f"{scenario_data.loc['Market Share 2027', scenarios]}%")
             st.metric("Gross Margin 2027", 
-                    f"{scenario_data[scenarios]['Gross Margin 2027']}%")
-        
-        # 3. Competitive Benchmarks
-        st.subheader("Competitive Benchmarks")
+                    f"{scenario_data.loc['Gross Margin 2027', scenarios]}%")
+            
+            # 3. Competitive Benchmarks
+            st.subheader("Competitive Benchmarks")
         
         benchmark_data = pd.DataFrame({
             'Metric': ['CAC', 'LTV', 'Gross Margin', 'Growth Rate'],
@@ -1662,18 +1789,11 @@ else:
         
         with metric_tabs[0]:
             # Profitability Metrics
-            profitability_metrics = pd.DataFrame({
-                'Year': ['2025', '2026', '2027'],
-                'Gross_Margin': [31.4, 44.6, 66.5],
-                'Operating_Margin': [15.2, 25.8, 35.6],
-                'EBITDA_Margin': [10.5, 20.4, 30.2]
-            })
-            
-            fig = px.line(profitability_metrics, x='Year',
+            fig = px.line(lt_profitability_metrics, x='Year',
                         y=['Gross_Margin', 'Operating_Margin', 'EBITDA_Margin'],
                         title='Margin Evolution (%)')
             fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="lt_profitability_chart_1")
         
         with metric_tabs[1]:
             # Efficiency Metrics
@@ -1687,19 +1807,27 @@ else:
                 st.metric("Revenue per Employee", "₹12.5L")
                 st.metric("Operating Leverage", "1.5x")
         
-        with metric_tabs[2]:
-            # Growth Metrics
-            growth_metrics = pd.DataFrame({
-                'Quarter': pd.date_range(start='2025-04-01', end='2027-12-31', freq='Q'),
-                'Revenue_Growth': [None, 147.8, 65.4] + [40]*9,
-                'User_Growth': [None, 150, 75] + [45]*9
-            })
-            
-            fig = px.line(growth_metrics, x='Quarter',
-                        y=['Revenue_Growth', 'User_Growth'],
-                        title='Growth Rates (%)')
-            fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            with metric_tabs[2]:
+                # Growth Metrics
+                # Create date range
+                quarters = pd.date_range(start='2025-04-01', end='2027-12-31', freq='Q')
+                
+                # Create growth rates list matching the length of quarters
+                revenue_growth = [None, 147.8, 65.4] + [40] * (len(quarters) - 3)
+                user_growth = [None, 150, 75] + [45] * (len(quarters) - 3)
+                
+                # Create DataFrame with matching lengths
+                growth_metrics = pd.DataFrame({
+                    'Quarter': quarters,
+                    'Revenue_Growth': revenue_growth[:len(quarters)],
+                    'User_Growth': user_growth[:len(quarters)]
+                })
+                
+                fig = px.line(lt_growth_metrics, x='Quarter',
+                            y=['Revenue_Growth', 'User_Growth'],
+                            title='Growth Rates (%)')
+                fig.update_layout(template="plotly_dark")
+                st.plotly_chart(fig, use_container_width=True, key="lt_growth_metrics_chart")
         
         with metric_tabs[3]:
             # Valuation Metrics
@@ -1722,30 +1850,30 @@ else:
         )
         
         # Create sensitivity matrix
-        base_revenue = 100000000  # Base case 2027 revenue
-        sensitivity_range = [-20, -10, 0, 10, 20]  # Percentage changes
-        
-        sensitivity_data = pd.DataFrame({
+        # For sensitivity analysis, use a base revenue value instead of the dictionary
+        base_revenue_2027 = 100000000  # Base case 2027 revenue
+        # Create sensitivity data using the base_revenue_2027 value
+        sensitivity_range = [-20, -10, 0, 10, 20]
+        lt_sensitivity_data = pd.DataFrame({
             'Change_%': sensitivity_range,
-            'Revenue_Impact': [base_revenue * (1 + x/100) for x in sensitivity_range],
-            'Margin_Impact': [55 + (x/2) for x in sensitivity_range]
-        })
-        
+            'Revenue_Impact': [base_revenue_2027 * (1 + x/100) for x in sensitivity_range],
+            'Margin_Impact': [55 + (x/2) for x in sensitivity_range]   
+        })     
         col1, col2 = st.columns(2)
         
         with col1:
-            fig = px.line(sensitivity_data, x='Change_%',
+            fig = px.line(lt_sensitivity_data, x='Change_%',
                         y='Revenue_Impact',
                         title=f'Revenue Sensitivity to {sensitivity_var}')
             fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="lt_revenue_sensitivity_chart")
         
         with col2:
-            fig = px.line(sensitivity_data, x='Change_%',
+            fig = px.line(lt_sensitivity_data, x='Change_%',
                         y='Margin_Impact',
                         title=f'Margin Sensitivity to {sensitivity_var}')
             fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="lt_margin_sensitivity_chart")
 
         
         
