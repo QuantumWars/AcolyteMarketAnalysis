@@ -1874,7 +1874,156 @@ else:
                         title=f'Margin Sensitivity to {sensitivity_var}')
             fig.update_layout(template="plotly_dark")
             st.plotly_chart(fig, use_container_width=True, key="lt_margin_sensitivity_chart")
+        st.header("Medical Student Market Analysis")
+    
+        market_tabs = st.tabs(["Current Numbers", "Projections", "Market Opportunity"])
+        
+        with market_tabs[0]:
+            # Current Numbers Analysis
+            col1, col2, col3 = st.columns(3)
+            
+            current_metrics = {
+                'total_colleges': 778,
+                'annual_intake': 128275,
+                'total_students': 705512  # 5.5 years * annual intake
+            }
+            
+            with col1:
+                st.metric("Total Medical Colleges", 
+                        f"{current_metrics['total_colleges']:,}",
+                        "Active Institutions")
+            with col2:
+                st.metric("Annual Intake", 
+                        f"{current_metrics['annual_intake']:,}",
+                        "Current Capacity")
+            with col3:
+                st.metric("Total Medical Students", 
+                        f"{current_metrics['total_students']:,}",
+                        "Across All Years")
+                
+            # Current Distribution Chart
+            current_data = pd.DataFrame({
+                'Category': ['MBBS Year 1', 'MBBS Year 2', 'MBBS Year 3', 
+                            'MBBS Year 4', 'Internship'],
+                'Students': [128275, 128275, 128275, 128275, 192412]  # 1.5x for internship
+            })
+            
+            fig = px.bar(current_data, x='Category', y='Students',
+                        title='Current Student Distribution',
+                        color='Category')
+            fig.update_layout(template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with market_tabs[1]:
+            # Future Projections
+            projection_data = pd.DataFrame({
+                'Year': [2024, 2025, 2026, 2027],
+                'Annual_Intake': [128275, 140000, 152000, 165000],
+                'Total_Students': [705512, 770000, 836000, 907500],
+                'Growth_Rate': [0, 9.1, 8.6, 8.5]
+            })
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Growth Trajectory
+                fig = px.line(projection_data, x='Year',
+                            y=['Annual_Intake', 'Total_Students'],
+                            title='Student Growth Projection')
+                fig.update_layout(template="plotly_dark")
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Year-wise Metrics
+                for _, row in projection_data.iterrows():
+                    st.metric(
+                        f"{row['Year']} Projections",
+                        f"Total: {row['Total_Students']:,.0f}",
+                        f"Intake: {row['Annual_Intake']:,.0f}"
+                    )
+            
+            # Detailed Projections Table
+            st.subheader("Detailed Projections")
+            st.dataframe(projection_data.style.format({
+                'Annual_Intake': '{:,.0f}',
+                'Total_Students': '{:,.0f}',
+                'Growth_Rate': '{:.1f}%'
+            }))
+        
+        with market_tabs[2]:
+            # Market Opportunity Analysis
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Target Market Share
+                market_share = pd.DataFrame({
+                    'Year': [2025, 2026, 2027],
+                    'Total_Market': [770000, 836000, 907500],
+                    'Our_Target': [5000, 25000, 100000],
+                    'Market_Share': [0.65, 2.99, 11.02]
+                })
+                
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    x=market_share['Year'],
+                    y=market_share['Total_Market'],
+                    name='Total Market'
+                ))
+                fig.add_trace(go.Bar(
+                    x=market_share['Year'],
+                    y=market_share['Our_Target'],
+                    name='Our Target'
+                ))
+                fig.update_layout(
+                    title='Market Size vs Our Target',
+                    template="plotly_dark",
+                    barmode='group'
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Market Share Metrics
+                for _, row in market_share.iterrows():
+                    st.metric(
+                        f"{row['Year']} Market Share",
+                        f"{row['Market_Share']:.2f}%",
+                        f"{row['Our_Target']:,.0f} users"
+                    )
+            
+            # Market Segmentation
+            st.subheader("Market Segmentation")
+            segments = pd.DataFrame({
+                'Segment': ['Total Available Market', 'Serviceable Available Market', 'Serviceable Obtainable Market'],
+                'Students': [907500, 589875, 100000],
+                'Percentage': [100, 65, 11.02]
+            })
+            
+            fig = px.funnel(segments, x='Students', y='Segment',
+                        title='Market Segmentation 2027')
+            fig.update_layout(template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True)
 
+        # Key Insights
+        st.header("Key Market Insights")
+        insights_col1, insights_col2 = st.columns(2)
+        
+        with insights_col1:
+            st.markdown("""
+            ### Market Growth
+            - Current annual intake of 128,275 students
+            - Projected to reach 165,000 by 2027
+            - Steady growth rate of ~9% annually
+            - Total student base growing to 907,500 by 2027
+            """)
+        
+        with insights_col2:
+            st.markdown("""
+            ### Market Opportunity
+            - Target market share of 11% by 2027
+            - Focus on institutional partnerships
+            - Digital channel complementing growth
+            - Clear path to 100,000 users
+            """)
         
         
     elif page == 'Investor Dashboard':
