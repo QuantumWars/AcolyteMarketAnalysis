@@ -1287,13 +1287,26 @@ else:
             'Industry Avg': [2000, 10000, 48, 110]
         })
 
-        lt_scenario_data = pd.DataFrame({
-            'Metric': ['Revenue 2027', 'Users 2027', 'Market Share 2027', 'Gross Margin 2027'],
-            'Conservative': [70000000, 70000, 8.1, 45],
-            'Base Case': [100000000, 100000, 11.5, 55],
-            'Aggressive': [130000000, 130000, 15.0, 65]
-        })
-
+        scenario_data = {
+    'Conservative': {
+        'Revenue 2027': 70000000,
+        'Users 2027': 70000,
+        'Market Share 2027': 8.1,
+        'Gross Margin 2027': 45
+    },
+    'Base Case': {
+        'Revenue 2027': 100000000,
+        'Users 2027': 100000,
+        'Market Share 2027': 11.5,
+        'Gross Margin 2027': 55
+    },
+    'Aggressive': {
+        'Revenue 2027': 130000000,
+        'Users 2027': 130000,
+        'Market Share 2027': 15.0,
+        'Gross Margin 2027': 65
+    }
+}
         # Create quarters for growth metrics
         quarters = pd.date_range(start='2025-04-01', end='2027-12-31', freq='Q')
         revenue_growth = [None, 147.8, 65.4, 45.0, 40.0, 35.0, 32.0, 30.0, 28.0, 25.0, 22.0]
@@ -1746,23 +1759,28 @@ else:
         
         with col1:
             # Scenario Comparison
-            fig = px.bar(lt_scenario_data, x='Metric',
-                        y=[scenario for scenario in scenario_multipliers.keys()],
-                        title='Scenario Comparison',
-                        barmode='group')
-            fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True, key="lt_scenario_comparison_chart")
-        
+            scenario_comparison = pd.DataFrame([
+                {'Metric': metric, 'Value': value, 'Scenario': scen}
+                for scen, metrics in scenario_data.items()
+                for metric, value in metrics.items()
+            ])
+                    
+            fig = px.bar(scenario_comparison, 
+                        x='Metric', 
+                        y='Value', 
+                        color='Scenario',
+                        barmode='group',
+                        title='Scenario Comparison')
         with col2:
             # Selected Scenario Details
             st.metric("Revenue 2027", 
-                    format_indian_currency(scenario_data.loc['Revenue 2027', scenarios]))
+        format_indian_currency(scenario_data[scenario]['Revenue 2027']))
             st.metric("Users 2027", 
-                    f"{scenario_data.loc['Users 2027', scenarios]:,.0f}")
+                    f"{scenario_data[scenario]['Users 2027']:,.0f}")
             st.metric("Market Share 2027", 
-                    f"{scenario_data.loc['Market Share 2027', scenarios]}%")
+                    f"{scenario_data[scenario]['Market Share 2027']}%")
             st.metric("Gross Margin 2027", 
-                    f"{scenario_data.loc['Gross Margin 2027', scenarios]}%")
+                    f"{scenario_data[scenario]['Gross Margin 2027']}%")
             
             # 3. Competitive Benchmarks
             st.subheader("Competitive Benchmarks")
