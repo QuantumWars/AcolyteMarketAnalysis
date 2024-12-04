@@ -1189,36 +1189,200 @@ else:
             st.dataframe(retention_health)
 
         # User Engagement Metrics
-        st.header("Engagement Metrics")
-        engagement_cols = st.columns(4)
-        
-        engagement_metrics = {
-            'Daily Active Users': f"{total_users * 0.6:.0f}",
-            'Weekly Active Users': f"{total_users * 0.8:.0f}",
-            'Average Session Time': "25 mins",
-            'Feature Adoption': "75%"
-        }
-        
-        for i, (metric, value) in enumerate(engagement_metrics.items()):
-            with engagement_cols[i]:
-                st.metric(metric, value)
+            st.header("Engagement Metrics")
+            engagement_cols = st.columns(4)
+            
+            engagement_metrics = {
+                'Daily Active Users': f"{total_users * 0.6:.0f}",
+                'Weekly Active Users': f"{total_users * 0.8:.0f}",
+                'Average Session Time': "25 mins",
+                'Feature Adoption': "75%"
+            }
+            
+            for i, (metric, value) in enumerate(engagement_metrics.items()):
+                with engagement_cols[i]:
+                    st.metric(metric, value)
 
-        # Action Items and Recommendations
-        st.header("Recommendations")
-        recommendations = []
+            # Action Items and Recommendations
+            st.header("Recommendations")
+            recommendations = []
+            
+            if total_users < weekly_target:
+                recommendations.append("🎯 Increase acquisition efforts to meet weekly target")
+            if institutional_pct < 70:
+                recommendations.append("🏫 Focus on institutional partnerships to improve channel mix")
+            if digital_pct < 20:
+                recommendations.append("💻 Boost digital marketing efforts")
+            if buffer_progress < 90:
+                recommendations.append("💰 Accelerate growth to reach next buffer release")
+            
+            for rec in recommendations:
+                st.write(rec)
+        st.header("MVP Feedback Matrix")
+        feedback_tabs = st.tabs(["Matrix Overview", "Upload Feedback", "Progress Tracking"])
         
-        if total_users < weekly_target:
-            recommendations.append("🎯 Increase acquisition efforts to meet weekly target")
-        if institutional_pct < 70:
-            recommendations.append("🏫 Focus on institutional partnerships to improve channel mix")
-        if digital_pct < 20:
-            recommendations.append("💻 Boost digital marketing efforts")
-        if buffer_progress < 90:
-            recommendations.append("💰 Accelerate growth to reach next buffer release")
+        # Initialize session state for feedback data if not exists
+        if 'feedback_data' not in st.session_state:
+            st.session_state.feedback_data = []
+            
+        with feedback_tabs[0]:
+            # Define the scoring criteria
+            scoring_criteria = {
+                "User Engagement (40%)": {
+                    "Daily Active Usage": {
+                        "Excellent (10p)": ">30 mins daily",
+                        "Good (7p)": "15-30 mins daily",
+                        "Needs Improvement (3p)": "<15 mins daily"
+                    },
+                    "Feature Utilization": {
+                        "Excellent (10p)": ">3 features daily",
+                        "Good (7p)": "2-3 features daily",
+                        "Needs Improvement (3p)": "1 feature daily"
+                    },
+                    "AI Token Utilization": {
+                        "Excellent (10p)": "80-100% used",
+                        "Good (7p)": "50-79% used",
+                        "Needs Improvement (3p)": "<50% used"
+                    },
+                    "Content Creation": {
+                        "Excellent (10p)": ">5 notes/PDF",
+                        "Good (7p)": "3-5 notes/PDF",
+                        "Needs Improvement (3p)": "<3 notes/PDF"
+                    }
+                },
+                "User Experience (30%)": {
+                    "In-App Feedback": {
+                        "Excellent (10p)": ">80% positive",
+                        "Good (7p)": "60-80% positive",
+                        "Needs Improvement (3p)": "<60% positive"
+                    },
+                    "Google Form Responses": {
+                        "Excellent (10p)": ">80% satisfaction",
+                        "Good (7p)": "60-80% satisfaction",
+                        "Needs Improvement (3p)": "<60% satisfaction"
+                    },
+                    "Physical Interaction": {
+                        "Excellent (10p)": "Predominantly positive",
+                        "Good (7p)": "Mixed feedback",
+                        "Needs Improvement (3p)": "Predominantly negative"
+                    }
+                },
+                "Technical Performance (20%)": {
+                    "App Stability": {
+                        "Excellent (10p)": "<1% crash rate",
+                        "Good (7p)": "1-3% crash rate",
+                        "Needs Improvement (3p)": ">3% crash rate"
+                    },
+                    "Response Time": {
+                        "Excellent (10p)": "<2 sec average",
+                        "Good (7p)": "2-4 sec average",
+                        "Needs Improvement (3p)": ">4 sec average"
+                    }
+                },
+                "Learning Impact (10%)": {
+                    "Learning Efficiency": {
+                        "Excellent (10p)": ">80% report improvement",
+                        "Good (7p)": "60-80% report improvement",
+                        "Needs Improvement (3p)": "<60% report improvement"
+                    }
+                }
+            }
+            
+            # Display scoring criteria in an expandable section
+            with st.expander("View Scoring Criteria", expanded=True):
+                for category, metrics in scoring_criteria.items():
+                    st.markdown(f"### {category}")
+                    for metric, criteria in metrics.items():
+                        st.markdown(f"#### {metric}")
+                        for level, description in criteria.items():
+                            st.markdown(f"- {level}: {description}")
         
-        for rec in recommendations:
-            st.write(rec)
-    # Add this section in your Dashboard.py file after the existing page conditions
+        with feedback_tabs[1]:
+            # File upload for feedback data
+            st.subheader("Upload Feedback Data")
+            uploaded_file = st.file_uploader("Upload Feedback CSV", type=['csv'])
+            
+            if uploaded_file is not None:
+                try:
+                    feedback_df = pd.read_csv(uploaded_file)
+                    st.success("Feedback data uploaded successfully!")
+                    st.session_state.feedback_data.extend(feedback_df.to_dict('records'))
+                    st.dataframe(feedback_df)
+                except Exception as e:
+                    st.error(f"Error uploading file: {str(e)}")
+            
+            # Manual feedback input
+            st.subheader("Manual Feedback Entry")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                category = st.selectbox("Category", list(scoring_criteria.keys()))
+            with col2:
+                if category:
+                    metric = st.selectbox("Metric", list(scoring_criteria[category].keys()))
+            
+            if category and metric:
+                score = st.slider("Score", 0, 10, 5)
+                notes = st.text_area("Additional Notes")
+                
+                if st.button("Add Feedback"):
+                    new_feedback = {
+                        'category': category,
+                        'metric': metric,
+                        'score': score,
+                        'notes': notes,
+                        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                    st.session_state.feedback_data.append(new_feedback)
+                    st.success("Feedback added successfully!")
+        
+        with feedback_tabs[2]:
+            if len(st.session_state.feedback_data) > 0:
+                # Convert feedback to DataFrame
+                feedback_df = pd.DataFrame(st.session_state.feedback_data)
+                
+                # Overall progress visualization
+                st.subheader("Progress Overview")
+                
+                # Score evolution over time
+                fig = px.line(feedback_df, x='timestamp', y='score',
+                            color='category', 
+                            title='Score Evolution Over Time')
+                fig.update_layout(template="plotly_dark")
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Category-wise performance
+                avg_scores = feedback_df.groupby('category')['score'].mean().reset_index()
+                fig = px.bar(avg_scores, x='category', y='score',
+                            title='Average Scores by Category')
+                fig.update_layout(template="plotly_dark")
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Success criteria tracking
+                total_score = avg_scores['score'].mean()
+                score_status = "🟢" if total_score >= 8 else "🟡" if total_score >= 6 else "🔴"
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Overall Score", f"{score_status} {total_score:.1f}/10")
+                with col2:
+                    st.metric("Total Feedback Count", len(feedback_df))
+                
+                # Detailed feedback table
+                st.subheader("Feedback History")
+                st.dataframe(feedback_df.sort_values('timestamp', ascending=False))
+                
+                # Export functionality
+                if st.button("Export Feedback Data"):
+                    csv = feedback_df.to_csv(index=False)
+                    st.download_button(
+                        label="Download CSV",
+                        data=csv,
+                        file_name="mvp_feedback_data.csv",
+                        mime="text/csv"
+                    )
+            else:
+                st.info("No feedback data available yet. Please upload data or add manual feedback.")
 
     elif page == 'Financial Projections':
         st.title("Financial Projections 2025")
@@ -1287,26 +1451,13 @@ else:
             'Industry Avg': [2000, 10000, 48, 110]
         })
 
-        scenario_data = {
-    'Conservative': {
-        'Revenue 2027': 70000000,
-        'Users 2027': 70000,
-        'Market Share 2027': 8.1,
-        'Gross Margin 2027': 45
-    },
-    'Base Case': {
-        'Revenue 2027': 100000000,
-        'Users 2027': 100000,
-        'Market Share 2027': 11.5,
-        'Gross Margin 2027': 55
-    },
-    'Aggressive': {
-        'Revenue 2027': 130000000,
-        'Users 2027': 130000,
-        'Market Share 2027': 15.0,
-        'Gross Margin 2027': 65
-    }
-}
+        lt_scenario_data = pd.DataFrame({
+            'Metric': ['Revenue 2027', 'Users 2027', 'Market Share 2027', 'Gross Margin 2027'],
+            'Conservative': [70000000, 70000, 8.1, 45],
+            'Base Case': [100000000, 100000, 11.5, 55],
+            'Aggressive': [130000000, 130000, 15.0, 65]
+        })
+
         # Create quarters for growth metrics
         quarters = pd.date_range(start='2025-04-01', end='2027-12-31', freq='Q')
         revenue_growth = [None, 147.8, 65.4, 45.0, 40.0, 35.0, 32.0, 30.0, 28.0, 25.0, 22.0]
@@ -1759,28 +1910,23 @@ else:
         
         with col1:
             # Scenario Comparison
-            scenario_comparison = pd.DataFrame([
-                {'Metric': metric, 'Value': value, 'Scenario': scen}
-                for scen, metrics in scenario_data.items()
-                for metric, value in metrics.items()
-            ])
-                    
-            fig = px.bar(scenario_comparison, 
-                        x='Metric', 
-                        y='Value', 
-                        color='Scenario',
-                        barmode='group',
-                        title='Scenario Comparison')
+            fig = px.bar(lt_scenario_data, x='Metric',
+                        y=[scenario for scenario in scenario_multipliers.keys()],
+                        title='Scenario Comparison',
+                        barmode='group')
+            fig.update_layout(template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True, key="lt_scenario_comparison_chart")
+        
         with col2:
             # Selected Scenario Details
             st.metric("Revenue 2027", 
-        format_indian_currency(scenario_data[scenario]['Revenue 2027']))
+                    format_indian_currency(scenario_data.loc['Revenue 2027', scenarios]))
             st.metric("Users 2027", 
-                    f"{scenario_data[scenario]['Users 2027']:,.0f}")
+                    f"{scenario_data.loc['Users 2027', scenarios]:,.0f}")
             st.metric("Market Share 2027", 
-                    f"{scenario_data[scenario]['Market Share 2027']}%")
+                    f"{scenario_data.loc['Market Share 2027', scenarios]}%")
             st.metric("Gross Margin 2027", 
-                    f"{scenario_data[scenario]['Gross Margin 2027']}%")
+                    f"{scenario_data.loc['Gross Margin 2027', scenarios]}%")
             
             # 3. Competitive Benchmarks
             st.subheader("Competitive Benchmarks")
