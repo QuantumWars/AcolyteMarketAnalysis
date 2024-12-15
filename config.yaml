@@ -1,14 +1,14 @@
 credentials:
   emails:
-    nischaybk@theboringpeople.in:
+    nischaybk@myacolyte.in:
       name: Nischay BK
       password: Nbkmdy@31
       role: admin
-    subhapattnaik@theboringpeople.in:
+    subhapattnaik@myacolyte.in:
       name: Admin User
       password: acolyte2024
       role: admin
-    ayesha@theboringpeople.in:
+    ayesha@myacolyte.in:
       name: Admin User
       password: acolyte2024
       role: admin
