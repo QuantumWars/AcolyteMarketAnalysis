@@ -145,7 +145,7 @@ else:
         }
 
     # Navigation
-    pages = ['Dashboard Overview', 'Financial Strategy', 'Partnership Tracker', 'User Analytics','Financial Projections','Investor Dashboard']
+    pages = ['Dashboard Overview', 'Financial Strategy', 'Partnership Tracker', 'User Analytics','Financial Projections','Investor Dashboard','Cap Table']
     page = st.sidebar.radio('Navigation', pages)
 
     if page == 'Dashboard Overview':
@@ -361,7 +361,7 @@ else:
 
         # Budget Analysis
         st.header("Budget Analysis")
-        budget_tabs = st.tabs(["Current Budget", "Quarter Comparison", "Projections"])
+        budget_tabs = st.tabs(["Current Budget", "Quarter Comparison", "Projections","Cap Table & Dilution"])
 
         with budget_tabs[0]:  # Current Budget
             col1, col2 = st.columns(2)
@@ -500,7 +500,163 @@ else:
                 st.metric("Monthly Burn Q1", format_indian_currency(q1_total/3))
                 st.metric("Projected Monthly Burn Q2", format_indian_currency(q2_total/3),
                         f"{((q2_total-q1_total)/q1_total)*100:+.1f}%")
-
+        with budget_tabs[2]:
+            st.header("Cap Table & Dilution Analysis")
+        
+        # Define cap table data structure
+        cap_table_data = {
+            'initial': {
+                'valuation': 10000,
+                'share_value': 10,
+                'shareholders': {
+                    'You': {'shares': 500, 'type': 'Ordinary'},
+                    'Subha': {'shares': 500, 'type': 'Ordinary'}
+                }
+            },
+            'post_team': {
+                'valuation': 15470,
+                'share_value': 10,
+                'shareholders': {
+                    'You': {'shares': 500, 'type': 'Ordinary'},
+                    'Subha': {'shares': 500, 'type': 'Ordinary'},
+                    'BOPPL': {'shares': 334, 'type': 'Ordinary'},
+                    'Varun': {'shares': 71, 'type': 'Ordinary'},
+                    'Ayesha': {'shares': 71, 'type': 'Ordinary'},
+                    'Jason': {'shares': 71, 'type': 'Ordinary'}
+                }
+            },
+            'post_ff': {
+                'valuation': 52500000,
+                'share_value': 32320.62,
+                'shareholders': {
+                    'You': {'shares': 500, 'type': 'Ordinary'},
+                    'Subha': {'shares': 500, 'type': 'Ordinary'},
+                    'BOPPL': {'shares': 334, 'type': 'Ordinary'},
+                    'Varun': {'shares': 71, 'type': 'Ordinary'},
+                    'Ayesha': {'shares': 71, 'type': 'Ordinary'},
+                    'Jason': {'shares': 71, 'type': 'Ordinary'},
+                    'F&F Investors': {'shares': 78, 'type': 'Preferred'}
+                }
+            },
+            'post_seed': {
+                'valuation': 200000000,
+                'share_value': 92307.69,
+                'shareholders': {
+                    'You': {'shares': 500, 'type': 'Ordinary'},
+                    'Subha': {'shares': 500, 'type': 'Ordinary'},
+                    'BOPPL': {'shares': 334, 'type': 'Ordinary'},
+                    'Varun': {'shares': 71, 'type': 'Ordinary'},
+                    'Ayesha': {'shares': 71, 'type': 'Ordinary'},
+                    'Jason': {'shares': 71, 'type': 'Ordinary'},
+                    'F&F Investors': {'shares': 78, 'type': 'Preferred'},
+                    'Seed Investors': {'shares': 542, 'type': 'Preferred'}
+                }
+            }
+        }
+        
+        # Function to calculate ownership percentages and values
+        def calculate_cap_table_metrics(round_data):
+            total_shares = sum(shareholder['shares'] for shareholder in round_data['shareholders'].values())
+            metrics = []
+            
+            for name, data in round_data['shareholders'].items():
+                percentage = (data['shares'] / total_shares) * 100
+                value = data['shares'] * round_data['share_value']
+                metrics.append({
+                    'Shareholder': name,
+                    'Shares': data['shares'],
+                    'Type': data['type'],
+                    'Percentage': percentage,
+                    'Value': value
+                })
+            
+            return pd.DataFrame(metrics)
+        
+        # Create nested tabs for different rounds
+        round_tabs = st.tabs(["Initial Round", "Team Round", "F&F Round", "Seed Round"])
+        
+        # Display cap table for each round
+        for tab, (round_name, round_data) in zip(round_tabs, cap_table_data.items()):
+            with tab:
+                # Create three columns for metrics
+                metric_cols = st.columns(3)
+                
+                with metric_cols[0]:
+                    st.metric("Valuation", format_indian_currency(round_data['valuation']))
+                with metric_cols[1]:
+                    st.metric("Share Value", format_indian_currency(round_data['share_value']))
+                with metric_cols[2]:
+                    total_shares = sum(shareholder['shares'] for shareholder in round_data['shareholders'].values())
+                    st.metric("Total Shares", f"{total_shares:,}")
+                
+                # Calculate and display detailed cap table
+                df = calculate_cap_table_metrics(round_data)
+                
+                # Display ownership table and chart side by side
+                table_col, chart_col = st.columns([3, 2])
+                
+                with table_col:
+                    st.dataframe(df.style.format({
+                        'Shares': '{:,.0f}',
+                        'Percentage': '{:.2f}%',
+                        'Value': lambda x: format_indian_currency(x)
+                    }), use_container_width=True)
+                
+                with chart_col:
+                    fig = px.pie(df, values='Shares', names='Shareholder',
+                               title=f'Ownership Distribution - {round_name.replace("_", " ").title()}')
+                    fig.update_layout(template="plotly_dark")
+                    st.plotly_chart(fig, use_container_width=True)
+        
+        # Dilution Analysis
+        st.subheader("Founder Dilution Analysis")
+        
+        # Calculate founder dilution across rounds
+        founder_dilution = []
+        for round_name, round_data in cap_table_data.items():
+            total_shares = sum(shareholder['shares'] for shareholder in round_data['shareholders'].values())
+            founder_shares = round_data['shareholders']['You']['shares'] + round_data['shareholders']['Subha']['shares']
+            founder_percentage = (founder_shares / total_shares) * 100
+            founder_dilution.append({
+                'Round': round_name.replace('_', ' ').title(),
+                'Founder Ownership': founder_percentage
+            })
+        
+        # Create dilution visualization
+        dilution_df = pd.DataFrame(founder_dilution)
+        fig = px.line(dilution_df, x='Round', y='Founder Ownership',
+                     title='Founder Ownership Dilution',
+                     markers=True)
+        fig.update_layout(
+            template="plotly_dark",
+            yaxis_title="Founder Ownership (%)"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Available Capital Analysis
+        st.subheader("Available Capital Analysis")
+        authorized_shares = 10000
+        used_shares = sum(shareholder_data['shares'] for shareholder_data in 
+                 cap_table_data['post_seed']['shareholders'].values())
+        remaining_shares = authorized_shares - used_shares
+        
+        capital_cols = st.columns(2)
+        
+        with capital_cols[0]:
+            st.metric("Authorized Shares", f"{authorized_shares:,}")
+            st.metric("Used Shares", f"{used_shares:,}")
+            st.metric("Available Shares", f"{remaining_shares:,}")
+        
+        with capital_cols[1]:
+            remaining_capital_df = pd.DataFrame({
+                'Category': ['Used Shares', 'Available Shares'],
+                'Shares': [used_shares, remaining_shares]
+            })
+            
+            fig = px.pie(remaining_capital_df, values='Shares', names='Category',
+                        title='Authorized Capital Utilization')
+            fig.update_layout(template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True)
         # Success Buffer Strategy
         st.header("Success Buffer Release Strategy")
         buffer_col1, buffer_col2, buffer_col3 = st.columns(3)
@@ -2418,7 +2574,159 @@ else:
                 st.sidebar.success("Data imported successfully!")
             except Exception as e:
                 st.sidebar.error(f"Error importing data: {str(e)}")
+    # Add this section after your existing page conditions in Dashboard.py
+    elif page == 'Cap Table':
+        st.title("Cap Table & Dilution Analysis")
+    
+    # Define cap table data structure
+    cap_table_data = {
+        'initial': {
+            'valuation': 10000,
+            'share_value': 10,
+            'shareholders': {
+                'You': {'shares': 500, 'type': 'Ordinary'},
+                'Subha': {'shares': 500, 'type': 'Ordinary'}
+            }
+        },
+        'post_team': {
+            'valuation': 15470,
+            'share_value': 10,
+            'shareholders': {
+                'You': {'shares': 500, 'type': 'Ordinary'},
+                'Subha': {'shares': 500, 'type': 'Ordinary'},
+                'BOPPL': {'shares': 334, 'type': 'Ordinary'},
+                'Varun': {'shares': 71, 'type': 'Ordinary'},
+                'Ayesha': {'shares': 71, 'type': 'Ordinary'},
+                'Jason': {'shares': 71, 'type': 'Ordinary'}
+            }
+        },
+        'post_ff': {
+            'valuation': 52500000,  # 5.25 Cr
+            'share_value': 32320.62,
+            'shareholders': {
+                'You': {'shares': 500, 'type': 'Ordinary'},
+                'Subha': {'shares': 500, 'type': 'Ordinary'},
+                'BOPPL': {'shares': 334, 'type': 'Ordinary'},
+                'Varun': {'shares': 71, 'type': 'Ordinary'},
+                'Ayesha': {'shares': 71, 'type': 'Ordinary'},
+                'Jason': {'shares': 71, 'type': 'Ordinary'},
+                'F&F Investors': {'shares': 78, 'type': 'Preferred'}
+            }
+        },
+        'post_seed': {
+            'valuation': 200000000,  # 20 Cr
+            'share_value': 92307.69,
+            'shareholders': {
+                'You': {'shares': 500, 'type': 'Ordinary'},
+                'Subha': {'shares': 500, 'type': 'Ordinary'},
+                'BOPPL': {'shares': 334, 'type': 'Ordinary'},
+                'Varun': {'shares': 71, 'type': 'Ordinary'},
+                'Ayesha': {'shares': 71, 'type': 'Ordinary'},
+                'Jason': {'shares': 71, 'type': 'Ordinary'},
+                'F&F Investors': {'shares': 78, 'type': 'Preferred'},
+                'Seed Investors': {'shares': 542, 'type': 'Preferred'}
+            }
+        }
+    }
 
+    # Function to calculate ownership percentages and values
+    def calculate_cap_table_metrics(round_data):
+        total_shares = sum(shareholder['shares'] for shareholder in round_data['shareholders'].values())
+        metrics = []
+        
+        for name, data in round_data['shareholders'].items():
+            percentage = (data['shares'] / total_shares) * 100
+            value = data['shares'] * round_data['share_value']
+            metrics.append({
+                'Shareholder': name,
+                'Shares': data['shares'],
+                'Type': data['type'],
+                'Percentage': percentage,
+                'Value': value
+            })
+        
+        return pd.DataFrame(metrics)
+
+    # Create visualization tabs
+    round_tabs = st.tabs(["Initial Round", "Team Round", "F&F Round", "Seed Round"])
+
+    # Display cap table for each round
+    for tab, (round_name, round_data) in zip(round_tabs, cap_table_data.items()):
+        with tab:
+            col1, col2, col3 = st.columns(3)
+            
+            # Display round metrics
+            with col1:
+                st.metric("Valuation", format_indian_currency(round_data['valuation']))
+            with col2:
+                st.metric("Share Value", format_indian_currency(round_data['share_value']))
+            with col3:
+                total_shares = sum(shareholder['shares'] for shareholder in round_data['shareholders'].values())
+                st.metric("Total Shares", f"{total_shares:,}")
+            
+            # Calculate and display detailed cap table
+            df = calculate_cap_table_metrics(round_data)
+            
+            # Display cap table
+            st.dataframe(df.style.format({
+                'Shares': '{:,.0f}',
+                'Percentage': '{:.2f}%',
+                'Value': lambda x: format_indian_currency(x)
+            }), use_container_width=True)
+            
+            # Create ownership visualization
+            fig = px.pie(df, values='Shares', names='Shareholder',
+                        title=f'Ownership Distribution - {round_name.replace("_", " ").title()}')
+            fig.update_layout(template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True)
+
+    # Dilution Analysis
+    st.header("Dilution Analysis")
+    
+    # Calculate founder dilution across rounds
+    founder_dilution = []
+    for round_name, round_data in cap_table_data.items():
+        total_shares = sum(shareholder['shares'] for shareholder in round_data['shareholders'].values())
+        founder_shares = round_data['shareholders']['You']['shares'] + round_data['shareholders']['Subha']['shares']
+        founder_percentage = (founder_shares / total_shares) * 100
+        founder_dilution.append({
+            'Round': round_name.replace('_', ' ').title(),
+            'Founder Ownership': founder_percentage
+        })
+    
+    # Create dilution visualization
+    dilution_df = pd.DataFrame(founder_dilution)
+    fig = px.line(dilution_df, x='Round', y='Founder Ownership',
+                 title='Founder Ownership Dilution',
+                 markers=True)
+    fig.update_layout(template="plotly_dark",
+                     yaxis_title="Founder Ownership (%)")
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Available Capital Analysis
+    st.subheader("Available Capital Analysis")
+authorized_shares = 10000
+used_shares = sum(shareholder_data['shares'] for shareholder_data in 
+                 cap_table_data['post_seed']['shareholders'].values())
+remaining_shares = authorized_shares - used_shares
+
+capital_cols = st.columns(2)
+
+with capital_cols[0]:
+    st.metric("Authorized Shares", f"{authorized_shares:,}")
+    st.metric("Used Shares", f"{used_shares:,}")
+    st.metric("Available Shares", f"{remaining_shares:,}")
+
+with capital_cols[1]:
+    remaining_capital_df = pd.DataFrame({
+        'Category': ['Used Shares', 'Available Shares'],
+        'Shares': [used_shares, remaining_shares]
+    })
+    
+    fig = px.pie(remaining_capital_df, values='Shares', names='Category',
+                title='Authorized Capital Utilization')
+    fig.update_layout(template="plotly_dark")
+    st.plotly_chart(fig, use_container_width=True)
     # Footer
     st.markdown("---")
     st.markdown(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")    
