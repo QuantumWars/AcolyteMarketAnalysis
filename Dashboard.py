@@ -2705,28 +2705,28 @@ else:
 
     # Available Capital Analysis
     st.subheader("Available Capital Analysis")
-authorized_shares = 10000
-used_shares = sum(shareholder_data['shares'] for shareholder_data in 
-                 cap_table_data['post_seed']['shareholders'].values())
-remaining_shares = authorized_shares - used_shares
-
-capital_cols = st.columns(2)
-
-with capital_cols[0]:
-    st.metric("Authorized Shares", f"{authorized_shares:,}")
-    st.metric("Used Shares", f"{used_shares:,}")
-    st.metric("Available Shares", f"{remaining_shares:,}")
-
-with capital_cols[1]:
-    remaining_capital_df = pd.DataFrame({
-        'Category': ['Used Shares', 'Available Shares'],
-        'Shares': [used_shares, remaining_shares]
-    })
+    authorized_shares = 10000
+    used_shares = sum(shareholder_data['shares'] for shareholder_data in 
+                     cap_table_data['post_seed']['shareholders'].values())
+    remaining_shares = authorized_shares - used_shares
     
-    fig = px.pie(remaining_capital_df, values='Shares', names='Category',
-                title='Authorized Capital Utilization')
-    fig.update_layout(template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
-    # Footer
-    st.markdown("---")
-    st.markdown(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")    
+    capital_cols = st.columns(2)
+    
+    with capital_cols[0]:
+        st.metric("Authorized Shares", f"{authorized_shares:,}")
+        st.metric("Used Shares", f"{used_shares:,}")
+        st.metric("Available Shares", f"{remaining_shares:,}")
+    
+    with capital_cols[1]:
+        remaining_capital_df = pd.DataFrame({
+            'Category': ['Used Shares', 'Available Shares'],
+            'Shares': [used_shares, remaining_shares]
+        })
+        
+        fig = px.pie(remaining_capital_df, values='Shares', names='Category',
+                    title='Authorized Capital Utilization')
+        fig.update_layout(template="plotly_dark")
+        st.plotly_chart(fig, use_container_width=True)
+        # Footer
+        st.markdown("---")
+        st.markdown(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")    
